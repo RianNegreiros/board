@@ -5,15 +5,18 @@ export default function Header() {
   return (
     <header className={styles.headerContainer}>
       <div className={styles.headerContent}>
-        <Link href="/">
+        <Link href="/" legacyBehavior>
           <img src="/images/logo.svg" alt="logo" />
         </Link>
-        <Link href="/">
-          <a>Home</a>
-        </Link>
-        <Link href="/board">
-          <a>My Board</a>
-        </Link>
+
+        <nav>
+          <Link href="/" legacyBehavior>
+            <a>Home</a>
+          </Link>
+          <Link href="/board" legacyBehavior>
+            <a>My Board</a>
+          </Link>
+        </nav>
 
         <button>
           Sign In With Github
