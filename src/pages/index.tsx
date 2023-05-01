@@ -1,6 +1,7 @@
 import Head from 'next/head'
 
 import styles from '@/styles/styles.module.scss'
+import { GetStaticProps } from 'next'
 
 export default function Home() {
   return (
@@ -33,4 +34,13 @@ export default function Home() {
       </main>
     </>
   )
+}
+
+export const getStaticProps: GetStaticProps = async () => {
+  return {
+    props: {
+    },
+    revalidate: 60 * 60 * 24 // 24 hours
+  }
+
 }
