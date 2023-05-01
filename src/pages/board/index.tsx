@@ -1,32 +1,70 @@
+import { useState, FormEvent } from 'react'
 import Head from 'next/head'
-import { getSession } from 'next-auth/client'
 import { GetServerSideProps } from 'next'
+import { getSession } from 'next-auth/client'
+
 import styles from './styles.module.scss'
 import { FiPlus, FiCalendar, FiEdit2, FiTrash, FiClock } from 'react-icons/fi'
 import { SupportButton } from '@/components/SupportButton'
 
-export default function Board() {
+import firebase from '@/services/firebaseConnection'
+
+interface BoardProps {
+  user: {
+    id: string
+    nome: string
+  }
+}
+
+export default function Board({ user }: BoardProps) {
+  const [input, setInput] = useState('')
+
+  async function handleAddTask(e: FormEvent) {
+    e.preventDefault()
+
+    if (input === '') {
+      alert('Type a task')
+      return
+    }
+
+    await firebase.firestore().collection('tasks')
+      .add({
+        created: new Date(),
+        tarefa: input,
+        userId: user.id,
+        nome: user.nome
+      })
+      .then((doc) => {
+        console.log('Success: ', doc)
+      })
+      .catch((err) => {
+        console.log('Error: ', err)
+      })
+  }
+
   return (
     <>
       <Head>
         <title>My tasks - Board</title>
       </Head>
       <main className={styles.container}>
-        <form>
+        <form onSubmit={handleAddTask} >
           <input
             type="text"
-            placeholder="Type your task here"
+            placeholder="Type a task..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
           />
           <button type="submit">
             <FiPlus size={25} color="#17181f" />
           </button>
         </form>
 
-        <h1>You got 2 tasks</h1>
+        <h1>You have 2 tasks</h1>
 
         <section>
           <article className={styles.taskList}>
-            <p>Learn Next.Js</p>
+            <p>Learn</p>
             <div className={styles.actions}>
               <div>
                 <div>
@@ -50,22 +88,24 @@ export default function Board() {
       </main>
 
       <div className={styles.vipContainer}>
-        <h3>Thank you for supporting this project.</h3>
+        <h3>Thank you for supporting</h3>
         <div>
           <FiClock size={28} color="#FFF" />
           <time>
-            Last donation on <strong>July 17 2021</strong>
+            Last donation 3 days ago
           </time>
         </div>
       </div>
 
       <SupportButton />
+
     </>
   )
 }
 
+
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
-  const session = await getSession({ req });
+  const session = await getSession({ req })
 
   if (!session?.id) {
     return {
@@ -76,8 +116,14 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
     }
   }
 
+  const user = {
+    nome: session?.user!.name,
+    id: session?.id
+  }
+
   return {
     props: {
+      user
     }
   }
 }
