@@ -64,14 +64,34 @@ export default function Board({ user, data }: BoardProps) {
 
       })
       .catch((err) => {
+        console.log(err)
       })
+
+  }
+
+  async function handleDelete(id: string){
+    
+    await firebase.firestore().collection('tarefas').doc(id)
+    .delete()
+    .then(()=>{
+      console.log('DELETADO COM SUCESSO!');
+      let taskDeleted = taskList.filter( item => {
+        return (item.id !== id)
+      });
+
+      setTaskList(taskDeleted);
+      
+    })
+    .catch((err)=>{
+      console.log(err);
+    })
 
   }
 
   return (
     <>
       <Head>
-        <title>Minhas tasks - Board</title>
+        <title>My tasks - Board</title>
       </Head>
       <main className={styles.container}>
         <form onSubmit={handleAddTask} >
@@ -90,7 +110,7 @@ export default function Board({ user, data }: BoardProps) {
 
         <section>
           {taskList.map(task => (
-            <article className={styles.taskList}>
+            <article key={task.id} className={styles.taskList}>
               <Link href={`/board/${task.id}`}>
                 <p>{task.task}</p>
               </Link>
@@ -106,7 +126,7 @@ export default function Board({ user, data }: BoardProps) {
                   </button>
                 </div>
 
-                <button>
+                <button onClick={ () => handleDelete(task.id) }>
                   <FiTrash size={20} color="#FF3636" />
                   <span>Delete</span>
                 </button>
