@@ -1,4 +1,4 @@
-import { initializeApp, getApps } from "firebase/app"
+import firebase from "firebase/app"
 import 'firebase/firestore'
 
 const firebaseConfig = {
@@ -11,6 +11,8 @@ const firebaseConfig = {
   measurementId: "G-KDN2S4E1K5"
 }
 
-const firebase = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig)
+}
 
 export default firebase
