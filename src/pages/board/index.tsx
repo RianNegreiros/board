@@ -5,7 +5,7 @@ import { getSession } from 'next-auth/client'
 import Link from 'next/link'
 
 import styles from './styles.module.scss'
-import { FiPlus, FiCalendar, FiEdit2, FiTrash, FiClock } from 'react-icons/fi'
+import { FiX, FiPlus, FiCalendar, FiEdit2, FiTrash, FiClock } from 'react-icons/fi'
 import { SupportButton } from '@/components/SupportButton'
 import { format } from 'date-fns'
 
@@ -29,16 +29,38 @@ interface BoardProps {
   data: string
 }
 
-
 export default function Board({ user, data }: BoardProps) {
   const [input, setInput] = useState('')
   const [taskList, setTaskList] = useState<TaskList[]>(JSON.parse(data))
+
+  const [taskEdit, setTaskEdit] = useState<TaskList | null>(null)
 
   async function handleAddTask(e: FormEvent) {
     e.preventDefault()
 
     if (input === '') {
-      alert('Type something!')
+      alert('Type a task!')
+      return
+    }
+
+    if (taskEdit) {
+
+      await firebase.firestore().collection('tasks')
+        .doc(taskEdit.id)
+        .update({
+          task: input
+        })
+        .then(() => {
+          let data = taskList
+          let taskIndex = taskList.findIndex(item => item.id === taskEdit.id)
+          data[taskIndex].task = input
+
+          setTaskList(data)
+          setTaskEdit(null)
+          setInput('')
+
+        })
+
       return
     }
 
@@ -69,23 +91,34 @@ export default function Board({ user, data }: BoardProps) {
 
   }
 
-  async function handleDelete(id: string){
-    
-    await firebase.firestore().collection('tarefas').doc(id)
-    .delete()
-    .then(()=>{
-      console.log('DELETADO COM SUCESSO!');
-      let taskDeleted = taskList.filter( item => {
-        return (item.id !== id)
-      });
 
-      setTaskList(taskDeleted);
-      
-    })
-    .catch((err)=>{
-      console.log(err);
-    })
+  async function handleDelete(id: string) {
 
+    await firebase.firestore().collection('tasks').doc(id)
+      .delete()
+      .then(() => {
+        let taskDeleted = taskList.filter(item => {
+          return (item.id !== id)
+        })
+
+        setTaskList(taskDeleted)
+
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+
+  }
+
+
+  function handleEditTask(task: TaskList) {
+    setTaskEdit(task)
+    setInput(task.task)
+  }
+
+  function handleCancelEdit() {
+    setInput('')
+    setTaskEdit(null)
   }
 
   return (
@@ -94,10 +127,21 @@ export default function Board({ user, data }: BoardProps) {
         <title>My tasks - Board</title>
       </Head>
       <main className={styles.container}>
+
+        {taskEdit && (
+          <span className={styles.warnText}>
+            <button onClick={handleCancelEdit}>
+              <FiX size={30} color="#FF3636" />
+            </button>
+            You are editing a task!
+          </span>
+        )}
+
+
         <form onSubmit={handleAddTask} >
           <input
             type="text"
-            placeholder="Type your task here..."
+            placeholder="Type a task"
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
@@ -120,13 +164,13 @@ export default function Board({ user, data }: BoardProps) {
                     <FiCalendar size={20} color="#FFB800" />
                     <time>{task.createdFormated}</time>
                   </div>
-                  <button>
+                  <button onClick={() => handleEditTask(task)} >
                     <FiEdit2 size={20} color="#FFF" />
                     <span>Edit</span>
                   </button>
                 </div>
 
-                <button onClick={ () => handleDelete(task.id) }>
+                <button onClick={() => handleDelete(task.id)}>
                   <FiTrash size={20} color="#FF3636" />
                   <span>Delete</span>
                 </button>
@@ -138,11 +182,11 @@ export default function Board({ user, data }: BoardProps) {
       </main>
 
       <div className={styles.vipContainer}>
-        <h3>Thank you for supporting this project</h3>
+        <h3>Thank you for supporting this project.</h3>
         <div>
           <FiClock size={28} color="#FFF" />
           <time>
-            Last donation 3 days ago
+            Last donation was 3 days ago
           </time>
         </div>
       </div>
@@ -153,12 +197,10 @@ export default function Board({ user, data }: BoardProps) {
   )
 }
 
-
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   const session = await getSession({ req })
 
   if (!session?.id) {
-    //Se o user nao tiver logado vamos redirecionar.
     return {
       redirect: {
         destination: '/',
@@ -183,7 +225,6 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
     name: session?.user!.name,
     id: session?.id
   }
-
 
   return {
     props: {
