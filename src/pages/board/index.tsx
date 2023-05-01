@@ -11,10 +11,11 @@ import { format } from 'date-fns'
 
 import firebase from '@/services/firebaseConnection'
 
-type Task = {
+
+type TaskList = {
   id: string
-  created: Date
-  createdFormated: string
+  created: string | Date
+  createdFormated?: string
   task: string
   userId: string
   name: string
@@ -25,11 +26,13 @@ interface BoardProps {
     id: string
     name: string
   }
+  data: string
 }
 
-export default function Board({ user }: BoardProps) {
+
+export default function Board({ user, data }: BoardProps) {
   const [input, setInput] = useState('')
-  const [taskList, setTaskList] = useState<Task[]>([])
+  const [taskList, setTaskList] = useState<TaskList[]>(JSON.parse(data))
 
   async function handleAddTask(e: FormEvent) {
     e.preventDefault()
@@ -47,7 +50,6 @@ export default function Board({ user }: BoardProps) {
         name: user.name
       })
       .then((doc) => {
-        console.log('SUCCESS: ', doc)
         let data = {
           id: doc.id,
           created: new Date(),
@@ -62,14 +64,14 @@ export default function Board({ user }: BoardProps) {
 
       })
       .catch((err) => {
-        console.log('ERROR: ', err)
       })
+
   }
 
   return (
     <>
       <Head>
-        <title>My tasks - Board</title>
+        <title>Minhas tasks - Board</title>
       </Head>
       <main className={styles.container}>
         <form onSubmit={handleAddTask} >
@@ -84,7 +86,7 @@ export default function Board({ user }: BoardProps) {
           </button>
         </form>
 
-        <h1>You have 2 tasks!</h1>
+        <h1>You have {taskList.length} {taskList.length === 1 ? 'task' : 'tasks'}!</h1>
 
         <section>
           {taskList.map(task => (
@@ -131,10 +133,12 @@ export default function Board({ user }: BoardProps) {
   )
 }
 
+
 export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   const session = await getSession({ req })
 
   if (!session?.id) {
+    //Se o user nao tiver logado vamos redirecionar.
     return {
       redirect: {
         destination: '/',
@@ -143,14 +147,29 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
     }
   }
 
+  const tasks = await firebase.firestore().collection('tasks')
+    .where('userId', '==', session?.id)
+    .orderBy('created', 'asc').get()
+
+  const data = JSON.stringify(tasks.docs.map(u => {
+    return {
+      id: u.id,
+      createdFormated: format(u.data().created.toDate(), 'dd MMMM yyyy'),
+      ...u.data(),
+    }
+  }))
+
   const user = {
     name: session?.user!.name,
     id: session?.id
   }
 
+
   return {
     props: {
-      user
+      user,
+      data
     }
   }
+
 }
