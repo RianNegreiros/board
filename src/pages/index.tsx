@@ -1,9 +1,24 @@
 import Head from 'next/head'
-
 import styles from '@/styles/styles.module.scss'
 import { GetStaticProps } from 'next'
 
-export default function Home() {
+import firebase from '@/services/firebaseConnection'
+import { useState } from 'react'
+
+type Data = {
+  id: string
+  donate: boolean
+  lastDonate: Date
+  image: string
+}
+
+interface HomeProps {
+  data: string
+}
+
+export default function Home({ data }: HomeProps) {
+  const [donaters, setDonaters] = useState<Data[]>(JSON.parse(data))
+
   return (
     <>
       <Head>
@@ -23,12 +38,11 @@ export default function Home() {
           </p>
         </section>
 
+        {donaters.length !== 0 && <h3>Donaters:</h3>}
         <div className={styles.donaters}>
-          <img src='https://placehold.co/150x150' alt="User photo" />
-          <img src='https://placehold.co/150x150' alt="User photo" />
-          <img src='https://placehold.co/150x150' alt="User photo" />
-          <img src='https://placehold.co/150x150' alt="User photo" />
-          <img src='https://placehold.co/150x150' alt="User photo" />
+          {donaters.map(item => (
+            <img key={item.image} src={item.image} alt="donater" />
+          ))}
         </div>
 
       </main>
@@ -40,7 +54,6 @@ export const getStaticProps: GetStaticProps = async () => {
   return {
     props: {
     },
-    revalidate: 60 * 60 * 24 // 24 hours
+    revalidate: 60 * 60
   }
-
 }
