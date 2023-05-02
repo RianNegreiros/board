@@ -16,39 +16,40 @@ type Task = {
   name: string
 }
 
-interface TaskListProps {
+interface TaskListProps{
   data: string
 }
 
-export default function Task({ data }: TaskListProps) {
+export default function Task({ data }: TaskListProps){
   const task = JSON.parse(data) as Task
 
-  return (
+  return(
     <>
-      <Head>
-        <title>Detalhes da sua task</title>
-      </Head>
-      <article className={styles.container}>
-        <div className={styles.actions}>
-          <div>
-            <FiCalendar size={30} color="#FFF" />
-            <span>task criada:</span>
-            <time>{task.createdFormated}</time>
-          </div>
+    <Head>
+      <title>Detalhes da sua task</title>
+    </Head>
+    <article className={styles.container}>
+      <div className={styles.actions}>
+        <div>
+          <FiCalendar size={30} color="#FFF"/>
+          <span>Task created:</span>
+          <time>{task.createdFormated}</time>
         </div>
-        <p>{task.task}</p>
-      </article>
+      </div>    
+      <p>{task.task}</p>  
+    </article>
     </>
   )
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ req, params }) => {
+export const getServerSideProps: GetServerSideProps = async ({ req, params}) => {
   const { id } = params ?? {}
   const session = await getSession({ req })
 
-  if (!session?.id) {
-    return {
-      redirect: {
+
+  if(!session?.vip){
+    return{
+      redirect:{
         destination: '/board',
         permanent: false,
       }
@@ -56,34 +57,23 @@ export const getServerSideProps: GetServerSideProps = async ({ req, params }) =>
   }
 
   const data = await firebase.firestore().collection('tasks')
-    .doc(String(id))
-    .get()
-    .then((snapshot) => {
-      if (!snapshot) {
-        return null
-      }
-
-      const data = {
-        id: snapshot.id,
-        created: snapshot.data()?.created,
-        createdFormated: format(snapshot.data()?.created?.toDate(), 'dd MMMM yyyy'),
-        task: snapshot.data()?.task,
-        userId: snapshot.data()?.userId,
-        name: snapshot.data()?.name
-      }
-
-      return JSON.stringify(data)
-    })
-
-  if (!data) {
-    return {
-      notFound: true
+  .doc(String(id))
+  .get()
+  .then((snapshot)=>{
+    const data = {
+      id: snapshot.id,
+      created: snapshot.data()?.created,
+      createdFormated: format(snapshot.data()?.created.toDate(), 'dd MMMM yyyy'),
+      task: snapshot.data()?.task,
+      userId: snapshot.data()?.userId,
+      name: snapshot.data()?.name
     }
-  }
 
+    return JSON.stringify(data)
+  })
 
-  return {
-    props: {
+  return{
+    props:{
       data
     }
   }

@@ -5,11 +5,12 @@ import { getSession } from 'next-auth/client'
 import Link from 'next/link'
 
 import styles from './styles.module.scss'
-import { FiX, FiPlus, FiCalendar, FiEdit2, FiTrash, FiClock } from 'react-icons/fi'
-import { SupportButton } from '@/components/SupportButton'
-import { format } from 'date-fns'
+import { FiPlus, FiCalendar, FiEdit2, FiTrash, FiClock, FiX } from 'react-icons/fi'
+import { SupportButton } from '../../components/SupportButton'
+import { format, formatDistance } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
-import firebase from '@/services/firebaseConnection'
+import firebase from '../../services/firebaseConnection'
 
 
 type TaskList = {
@@ -25,9 +26,12 @@ interface BoardProps {
   user: {
     id: string
     name: string
+    vip: boolean
+    lastDonate: string | Date
   }
   data: string
 }
+
 
 export default function Board({ user, data }: BoardProps) {
   const [input, setInput] = useState('')
@@ -39,7 +43,7 @@ export default function Board({ user, data }: BoardProps) {
     e.preventDefault()
 
     if (input === '') {
-      alert('Type a task!')
+      alert('Preencha alguma task!')
       return
     }
 
@@ -72,6 +76,7 @@ export default function Board({ user, data }: BoardProps) {
         name: user.name
       })
       .then((doc) => {
+        console.log('CADASTRADO COM SUCESSO!')
         let data = {
           id: doc.id,
           created: new Date(),
@@ -86,7 +91,7 @@ export default function Board({ user, data }: BoardProps) {
 
       })
       .catch((err) => {
-        console.log(err)
+        console.log('ERRO AO CADASTRAR: ', err)
       })
 
   }
@@ -97,6 +102,7 @@ export default function Board({ user, data }: BoardProps) {
     await firebase.firestore().collection('tasks').doc(id)
       .delete()
       .then(() => {
+        console.log('DELETADO COM SUCESSO!')
         let taskDeleted = taskList.filter(item => {
           return (item.id !== id)
         })
@@ -124,7 +130,7 @@ export default function Board({ user, data }: BoardProps) {
   return (
     <>
       <Head>
-        <title>My tasks - Board</title>
+        <title>Minhas tasks - Board</title>
       </Head>
       <main className={styles.container}>
 
@@ -133,7 +139,7 @@ export default function Board({ user, data }: BoardProps) {
             <button onClick={handleCancelEdit}>
               <FiX size={30} color="#FF3636" />
             </button>
-            You are editing a task!
+            Você está editando uma task!
           </span>
         )}
 
@@ -141,7 +147,7 @@ export default function Board({ user, data }: BoardProps) {
         <form onSubmit={handleAddTask} >
           <input
             type="text"
-            placeholder="Type a task"
+            placeholder="Digite sua task..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
@@ -164,15 +170,17 @@ export default function Board({ user, data }: BoardProps) {
                     <FiCalendar size={20} color="#FFB800" />
                     <time>{task.createdFormated}</time>
                   </div>
-                  <button onClick={() => handleEditTask(task)} >
-                    <FiEdit2 size={20} color="#FFF" />
-                    <span>Edit</span>
-                  </button>
+                  {user.vip && (
+                    <button onClick={() => handleEditTask(task)} >
+                      <FiEdit2 size={20} color="#FFF" />
+                      <span>Editar</span>
+                    </button>
+                  )}
                 </div>
 
                 <button onClick={() => handleDelete(task.id)}>
                   <FiTrash size={20} color="#FF3636" />
-                  <span>Delete</span>
+                  <span>Excluir</span>
                 </button>
               </div>
             </article>
@@ -181,15 +189,17 @@ export default function Board({ user, data }: BoardProps) {
 
       </main>
 
-      <div className={styles.vipContainer}>
-        <h3>Thank you for supporting this project.</h3>
-        <div>
-          <FiClock size={28} color="#FFF" />
-          <time>
-            Last donation was 3 days ago
-          </time>
+      {user.vip && (
+        <div className={styles.vipContainer}>
+          <h3>Thank you for supporting this project.</h3>
+          <div>
+            <FiClock size={28} color="#FFF" />
+            <time>
+              Last donation {formatDistance(new Date(user.lastDonate), new Date(), { locale: ptBR })}
+            </time>
+          </div>
         </div>
-      </div>
+      )}
 
       <SupportButton />
 
@@ -222,8 +232,10 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
   }))
 
   const user = {
-    name: session?.user!.name,
-    id: session?.id
+    name: session?.user?.name,
+    id: session?.id,
+    vip: session?.vip,
+    lastDonate: session?.lastDonate
   }
 
   return {
@@ -232,5 +244,4 @@ export const getServerSideProps: GetServerSideProps = async ({ req }) => {
       data
     }
   }
-
 }
