@@ -4,6 +4,7 @@ import { GetStaticProps } from 'next'
 
 import firebase from '@/services/firebaseConnection'
 import { useState } from 'react'
+import Image from 'next/image'
 
 type Data = {
   id: string
@@ -29,7 +30,7 @@ export default function Home({ data }: HomeProps) {
       </Head>
       <main className={styles.contentContainer}>
 
-        <img src="/images/board-user.svg" alt="hero" />
+        <Image src="/images/board-user.svg" width={553} height={384} alt="hero" />
 
         <section className={styles.callToAction}>
           <h1>A tool for your everyday life. Write, plan and organize yourself...</h1>
@@ -41,7 +42,7 @@ export default function Home({ data }: HomeProps) {
         {donaters.length !== 0 && <h3>Donaters:</h3>}
         <div className={styles.donaters}>
           {donaters.map(item => (
-            <img key={item.image} src={item.image} alt="donater" />
+            <Image key={item.image} src={item.image} alt="user" />
           ))}
         </div>
 
@@ -51,8 +52,18 @@ export default function Home({ data }: HomeProps) {
 }
 
 export const getStaticProps: GetStaticProps = async () => {
+  const donaters = await firebase.firestore().collection('users').get()
+
+  const data = JSON.stringify(donaters.docs.map(u => {
+    return {
+      id: u.id,
+      ...u.data(),
+    }
+  }))
+
   return {
     props: {
+      data
     },
     revalidate: 60 * 60
   }
