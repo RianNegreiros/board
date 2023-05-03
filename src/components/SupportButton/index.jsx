@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import styles from './styles.module.scss'
 
-export function SupportButton() {
+export default function SupportButton() {
   return (
     <div className={styles.doanteContainer}>
       <Link href="/donate">

@@ -6,11 +6,11 @@ import Link from 'next/link'
 
 import styles from './styles.module.scss'
 import { FiPlus, FiCalendar, FiEdit2, FiTrash, FiClock, FiX } from 'react-icons/fi'
-import { SupportButton } from '../../components/SupportButton'
+import SupportButton from '@/components/SupportButton'
 import { format, formatDistance } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
-import firebase from '../../services/firebaseConnection'
+import firebase from '@/services/firebaseConnection'
 
 
 type TaskList = {

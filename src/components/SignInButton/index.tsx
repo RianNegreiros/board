@@ -1,11 +1,10 @@
-
 import { signIn, signOut, useSession } from 'next-auth/client'
 
 import styles from './styles.module.scss'
 import { FaGithub } from 'react-icons/fa'
 import { FiX } from 'react-icons/fi'
 
-export function SignInButton() {
+export default function SignInButton() {
   const [session] = useSession()
 
   const userImage = session?.user?.image ? session.user.image : 'https://avatars.githubusercontent.com/u/59899998?v=4'
